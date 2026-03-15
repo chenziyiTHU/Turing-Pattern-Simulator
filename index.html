@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图灵斑图模拟器</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent2: #3fb950;
+      --danger: #f85149;
+      --warning: #d29922;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    header .subtitle {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 300px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar::-webkit-scrollbar { width: 6px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .section {
+      border-bottom: 1px solid var(--border);
+      padding: 14px 16px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    /* Presets */
+    .presets-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .preset-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 7px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      text-align: center;
+      transition: all 0.15s;
+    }
+
+    .preset-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .preset-btn.active {
+      border-color: var(--accent);
+      background: rgba(88, 166, 255, 0.1);
+      color: var(--accent);
+    }
+
+    /* Sliders */
+    .param-row {
+      margin-bottom: 10px;
+    }
+
+    .param-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .param-name {
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .param-name sub {
+      font-size: 10px;
+    }
+
+    .param-value {
+      color: var(--accent);
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+      min-width: 52px;
+      text-align: right;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 4px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: var(--border);
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    input[type="number"] {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      width: 80px;
+      font-family: 'Courier New', monospace;
+    }
+
+    input[type="number"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* Color scheme */
+    .color-schemes {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .color-swatch {
+      width: 36px;
+      height: 36px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .color-swatch:hover { transform: scale(1.1); }
+    .color-swatch.active { border-color: white; }
+
+    /* Buttons */
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #0d1117;
+    }
+
+    .btn-primary:hover { opacity: 0.85; }
+
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    .btn-danger {
+      background: var(--surface2);
+      color: var(--danger);
+      border-color: var(--border);
+    }
+
+    .btn-danger:hover { border-color: var(--danger); background: rgba(248,81,73,0.1); }
+
+    .btn-success {
+      background: var(--surface2);
+      color: var(--accent2);
+    }
+
+    .btn-success:hover { border-color: var(--accent2); }
+
+    /* Stats */
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .stat-card {
+      background: var(--surface2);
+      border-radius: 6px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+    }
+
+    .stat-label { color: var(--text-muted); font-size: 11px; }
+    .stat-value { color: var(--accent); font-size: 15px; font-weight: 600; font-family: monospace; }
+
+    /* Canvas area */
+    .canvas-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #050505;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .canvas-toolbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .tool-group {
+      display: flex;
+      gap: 4px;
+    }
+
+    .tool-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.15s;
+    }
+
+    .tool-btn:hover { color: var(--text); border-color: var(--accent); }
+    .tool-btn.active {
+      background: rgba(88,166,255,0.15);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .canvas-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow: hidden;
+    }
+
+    canvas#mainCanvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 4px;
+      cursor: crosshair;
+      box-shadow: 0 0 40px rgba(0,0,0,0.8);
+    }
+
+    /* Status bar */
+    .statusbar {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 4px 16px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      flex-shrink: 0;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .status-item span { color: var(--text); }
+
+    /* Tooltip */
+    .tooltip {
+      position: relative;
+    }
+    .tooltip:hover::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1c2128;
+      color: var(--text);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      white-space: nowrap;
+      border: 1px solid var(--border);
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    .formula-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    .formula-box .hl { color: #f78166; }
+    .formula-box .hl2 { color: #7ee787; }
+    .formula-box .hl3 { color: #ffa657; }
+
+    select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 5px 8px;
+      border-radius: 5px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    select:focus { outline: none; border-color: var(--accent); }
+
+    .tag {
+      display: inline-block;
+      background: rgba(88,166,255,0.12);
+      color: var(--accent);
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 10px;
+      border: 1px solid rgba(88,166,255,0.3);
+      margin-left: 4px;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar { width: 260px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>图灵斑图模拟器</h1>
+  </div>
+  <div class="subtitle">Turing Pattern Simulator &mdash; Gray-Scott 反应扩散模型</div>
+</header>
+
+<div class="main">
+  <!-- Sidebar -->
+  <div class="sidebar">
+
+    <!-- Presets -->
+    <div class="section">
+      <div class="section-title">预设模式</div>
+      <div class="presets-grid">
+        <button class="preset-btn" onclick="applyPreset('spots')">斑点</button>
+        <button class="preset-btn" onclick="applyPreset('stripes')">条纹</button>
+        <button class="preset-btn" onclick="applyPreset('labyrinth')">迷宫</button>
+        <button class="preset-btn" onclick="applyPreset('mitosis')">细胞分裂</button>
+        <button class="preset-btn" onclick="applyPreset('worms')">虫纹</button>
+        <button class="preset-btn" onclick="applyPreset('coral')">珊瑚</button>
+        <button class="preset-btn" onclick="applyPreset('bubbles')">气泡</button>
+        <button class="preset-btn" onclick="applyPreset('chaos')">混沌</button>
+      </div>
+    </div>
+
+    <!-- Model Parameters -->
+    <div class="section">
+      <div class="section-title">模型参数 <span class="tag">Gray-Scott</span></div>
+
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">扩散率 D<sub>u</sub></span>
+          <span class="param-value" id="val-Du">0.2100</span>
+        </div>
+        <input type="range" id="slider-Du" min="0.01" max="0.5" step="0.001" value="0.21"
+               oninput="updateParam('Du', this.value)">
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">扩散率 D<sub>v</sub></span>
+          <span class="param-value" id="val-Dv">0.1050</span>
+        </div>
+        <input type="range" id="slider-Dv" min="0.01" max="0.3" step="0.001" value="0.105"
+               oninput="updateParam('Dv', this.value)">
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">补给率 f <span style="color:var(--text-muted);font-size:11px">(feed)</span></span>
+          <span class="param-value" id="val-f">0.0350</span>
+        </div>
+        <input type="range" id="slider-f" min="0.001" max="0.1" step="0.0001" value="0.035"
+               oninput="updateParam('f', this.value)">
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">消耗率 k <span style="color:var(--text-muted);font-size:11px">(kill)</span></span>
+          <span class="param-value" id="val-k">0.0650</span>
+        </div>
+        <input type="range" id="slider-k" min="0.001" max="0.1" step="0.0001" value="0.065"
+               oninput="updateParam('k', this.value)">
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">时间步长 dt</span>
+          <span class="param-value" id="val-dt">1.0</span>
+        </div>
+        <input type="range" id="slider-dt" min="0.1" max="2.0" step="0.1" value="1.0"
+               oninput="updateParam('dt', this.value)">
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">每帧步数</span>
+          <span class="param-value" id="val-stepsPerFrame">8</span>
+        </div>
+        <input type="range" id="slider-stepsPerFrame" min="1" max="32" step="1" value="8"
+               oninput="updateParam('stepsPerFrame', this.value)">
+      </div>
+    </div>
+
+    <!-- Grid Settings -->
+    <div class="section">
+      <div class="section-title">网格设置</div>
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">网格大小</span>
+        </div>
+        <select id="gridSizeSelect" onchange="changeGridSize(this.value)" style="width:100%;margin-top:4px">
+          <option value="128">128 × 128</option>
+          <option value="256" selected>256 × 256</option>
+          <option value="512">512 × 512</option>
+        </select>
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">初始化模式</span>
+        </div>
+        <select id="initMode" style="width:100%;margin-top:4px">
+          <option value="random">随机噪声</option>
+          <option value="center">中心方块</option>
+          <option value="grid">点阵</option>
+          <option value="rings">同心圆</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Color Schemes -->
+    <div class="section">
+      <div class="section-title">色彩方案</div>
+      <div class="color-schemes" id="colorSchemes">
+        <canvas class="color-swatch active" id="swatch-classic" width="36" height="36"
+                onclick="setColorScheme('classic')" title="经典" data-tip="经典"></canvas>
+        <canvas class="color-swatch" id="swatch-fire" width="36" height="36"
+                onclick="setColorScheme('fire')" data-tip="火焰"></canvas>
+        <canvas class="color-swatch" id="swatch-ocean" width="36" height="36"
+                onclick="setColorScheme('ocean')" data-tip="深海"></canvas>
+        <canvas class="color-swatch" id="swatch-plasma" width="36" height="36"
+                onclick="setColorScheme('plasma')" data-tip="等离子"></canvas>
+        <canvas class="color-swatch" id="swatch-forest" width="36" height="36"
+                onclick="setColorScheme('forest')" data-tip="森林"></canvas>
+        <canvas class="color-swatch" id="swatch-neon" width="36" height="36"
+                onclick="setColorScheme('neon')" data-tip="霓虹"></canvas>
+        <canvas class="color-swatch" id="swatch-sunset" width="36" height="36"
+                onclick="setColorScheme('sunset')" data-tip="日落"></canvas>
+        <canvas class="color-swatch" id="swatch-ice" width="36" height="36"
+                onclick="setColorScheme('ice')" data-tip="冰晶"></canvas>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="section">
+      <div class="section-title">控制</div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="playBtn" onclick="togglePlay()">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+            <polygon points="2,1 11,6 2,11"/>
+          </svg>
+          运行
+        </button>
+        <button class="btn btn-secondary" onclick="stepOnce()">单步</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="resetSim()">重置</button>
+        <button class="btn btn-success" onclick="saveImage()">保存图像</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-danger" onclick="clearCanvas()">清除</button>
+        <button class="btn btn-secondary" onclick="randomize()">随机化</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="section">
+      <div class="section-title">实时统计</div>
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-label">帧率 FPS</div>
+          <div class="stat-value" id="statFps">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">迭代步数</div>
+          <div class="stat-value" id="statSteps">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">均值 &lt;v&gt;</div>
+          <div class="stat-value" id="statMeanV">0.000</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">最大 v</div>
+          <div class="stat-value" id="statMaxV">0.000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formula -->
+    <div class="section">
+      <div class="section-title">反应扩散方程</div>
+      <div class="formula-box">
+        <div><span class="hl">∂u/∂t</span> = D<sub>u</sub>∇²u <span class="hl2">- uv²</span> + f(1-u)</div>
+        <div><span class="hl">∂v/∂t</span> = D<sub>v</sub>∇²v <span class="hl2">+ uv²</span> - (f+k)v</div>
+        <div style="margin-top:6px;font-size:10px;color:#6e7681">
+          u = 激活剂, v = 抑制剂<br>
+          f = 补给率, k = 消耗率
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Canvas Area -->
+  <div class="canvas-area">
+    <div class="canvas-toolbar">
+      <div class="tool-group">
+        <span style="color:var(--text-muted);font-size:12px;line-height:28px">绘制工具:</span>
+        <button class="tool-btn active" id="tool-draw" onclick="setTool('draw')">绘制 v</button>
+        <button class="tool-btn" id="tool-erase" onclick="setTool('erase')">清除</button>
+        <button class="tool-btn" id="tool-seed" onclick="setTool('seed')">播种</button>
+      </div>
+      <div class="tool-group" style="margin-left:8px">
+        <span style="color:var(--text-muted);font-size:12px;line-height:28px">笔刷:</span>
+        <input type="range" id="brushSize" min="2" max="40" value="10" style="width:80px;margin-top:12px"
+               oninput="brushRadius = parseInt(this.value); document.getElementById('brushSizeVal').textContent = this.value">
+        <span id="brushSizeVal" style="color:var(--accent);font-size:12px;min-width:20px;line-height:28px">10</span>
+      </div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+        <label style="color:var(--text-muted);font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="checkbox" id="showGrid" onchange="toggleGrid(this.checked)"> 显示边界
+        </label>
+      </div>
+    </div>
+
+    <div class="canvas-container">
+      <canvas id="mainCanvas"></canvas>
+    </div>
+
+    <div class="statusbar">
+      <div class="status-item">坐标: <span id="mousePos">-</span></div>
+      <div class="status-item">u 值: <span id="mouseU">-</span></div>
+      <div class="status-item">v 值: <span id="mouseV">-</span></div>
+      <div class="status-item" style="margin-left:auto">网格: <span id="gridInfo">256×256</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// Simulation State
+// ─────────────────────────────────────────────
+let W = 256, H = 256;
+let U, V, nextU, nextV;
+let params = { Du: 0.21, Dv: 0.105, f: 0.035, k: 0.065, dt: 1.0, stepsPerFrame: 8 };
+let running = false;
+let animFrameId = null;
+let totalSteps = 0;
+let currentTool = 'draw';
+let brushRadius = 10;
+let colorScheme = 'classic';
+let showGridLines = false;
+
+// ─────────────────────────────────────────────
+// Canvas Setup
+// ─────────────────────────────────────────────
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+
+function setupCanvas() {
+  canvas.width = W;
+  canvas.height = H;
+  document.getElementById('gridInfo').textContent = `${W}×${H}`;
+}
+
+// ─────────────────────────────────────────────
+// Color Schemes
+// ─────────────────────────────────────────────
+const colorSchemes = {
+  classic: [
+    [15, 15, 25],
+    [30, 40, 80],
+    [60, 100, 180],
+    [140, 200, 240],
+    [220, 240, 255],
+    [255, 255, 255]
+  ],
+  fire: [
+    [10, 0, 0],
+    [80, 10, 0],
+    [180, 40, 0],
+    [240, 120, 0],
+    [255, 220, 60],
+    [255, 255, 200]
+  ],
+  ocean: [
+    [0, 5, 30],
+    [0, 20, 70],
+    [0, 60, 120],
+    [0, 130, 170],
+    [50, 200, 210],
+    [200, 240, 255]
+  ],
+  plasma: [
+    [5, 0, 20],
+    [50, 0, 100],
+    [140, 0, 180],
+    [200, 60, 180],
+    [240, 160, 80],
+    [255, 245, 200]
+  ],
+  forest: [
+    [5, 10, 2],
+    [15, 40, 10],
+    [30, 90, 25],
+    [70, 150, 40],
+    [140, 200, 80],
+    [220, 240, 180]
+  ],
+  neon: [
+    [0, 0, 5],
+    [0, 30, 60],
+    [0, 180, 120],
+    [0, 255, 160],
+    [180, 255, 60],
+    [255, 255, 150]
+  ],
+  sunset: [
+    [10, 0, 20],
+    [60, 5, 60],
+    [160, 30, 80],
+    [220, 80, 60],
+    [240, 180, 80],
+    [255, 240, 180]
+  ],
+  ice: [
+    [0, 5, 20],
+    [10, 30, 80],
+    [40, 80, 160],
+    [120, 180, 230],
+    [200, 225, 245],
+    [240, 250, 255]
+  ]
+};
+
+function lerpColor(stops, t) {
+  t = Math.max(0, Math.min(1, t));
+  const n = stops.length - 1;
+  const idx = t * n;
+  const i = Math.min(Math.floor(idx), n - 1);
+  const frac = idx - i;
+  const a = stops[i], b = stops[i + 1];
+  return [
+    Math.round(a[0] + frac * (b[0] - a[0])),
+    Math.round(a[1] + frac * (b[1] - a[1])),
+    Math.round(a[2] + frac * (b[2] - a[2]))
+  ];
+}
+
+function drawSwatches() {
+  for (const [name, stops] of Object.entries(colorSchemes)) {
+    const sw = document.getElementById(`swatch-${name}`);
+    if (!sw) continue;
+    const sctx = sw.getContext('2d');
+    const grad = sctx.createLinearGradient(0, 0, 36, 36);
+    const steps = 6;
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const [r, g, b] = lerpColor(stops, t);
+      grad.addColorStop(t, `rgb(${r},${g},${b})`);
+    }
+    sctx.fillStyle = grad;
+    sctx.fillRect(0, 0, 36, 36);
+  }
+}
+
+// ─────────────────────────────────────────────
+// Initialization
+// ─────────────────────────────────────────────
+function allocBuffers() {
+  U = new Float32Array(W * H);
+  V = new Float32Array(W * H);
+  nextU = new Float32Array(W * H);
+  nextV = new Float32Array(W * H);
+}
+
+function initSim(mode) {
+  allocBuffers();
+  mode = mode || document.getElementById('initMode').value;
+
+  // Fill with equilibrium
+  U.fill(1.0);
+  V.fill(0.0);
+
+  if (mode === 'random') {
+    for (let i = 0; i < W * H; i++) {
+      if (Math.random() < 0.05) {
+        const nx = i % W, ny = Math.floor(i / W);
+        seedAt(nx, ny, 6);
+      }
+    }
+  } else if (mode === 'center') {
+    const cx = W >> 1, cy = H >> 1, r = Math.min(W, H) >> 4;
+    for (let y = cy - r; y <= cy + r; y++)
+      for (let x = cx - r; x <= cx + r; x++)
+        seedPixel(x, y);
+  } else if (mode === 'grid') {
+    const spacing = Math.min(W, H) >> 3;
+    for (let y = spacing; y < H; y += spacing)
+      for (let x = spacing; x < W; x += spacing)
+        seedAt(x, y, 4);
+  } else if (mode === 'rings') {
+    const cx = W >> 1, cy = H >> 1;
+    const radii = [20, 50, 90, 140];
+    for (const r of radii) {
+      const steps = Math.ceil(2 * Math.PI * r);
+      for (let s = 0; s < steps; s++) {
+        const angle = (s / steps) * 2 * Math.PI;
+        const x = Math.round(cx + r * Math.cos(angle));
+        const y = Math.round(cy + r * Math.sin(angle));
+        seedAt(x, y, 3);
+      }
+    }
+  }
+  totalSteps = 0;
+}
+
+function seedAt(cx, cy, radius) {
+  for (let dy = -radius; dy <= radius; dy++)
+    for (let dx = -radius; dx <= radius; dx++)
+      if (dx * dx + dy * dy <= radius * radius)
+        seedPixel(cx + dx, cy + dy);
+}
+
+function seedPixel(x, y) {
+  x = ((x % W) + W) % W;
+  y = ((y % H) + H) % H;
+  const i = y * W + x;
+  U[i] = 0.5 + (Math.random() - 0.5) * 0.1;
+  V[i] = 0.25 + (Math.random() - 0.5) * 0.1;
+}
+
+// ─────────────────────────────────────────────
+// Simulation Step (Gray-Scott)
+// ─────────────────────────────────────────────
+function step() {
+  const { Du, Dv, f, k, dt } = params;
+  const w = W, h = H;
+
+  for (let y = 0; y < h; y++) {
+    const yUp = ((y - 1 + h) % h) * w;
+    const yDn = ((y + 1) % h) * w;
+    const yRow = y * w;
+
+    for (let x = 0; x < w; x++) {
+      const xL = (x - 1 + w) % w;
+      const xR = (x + 1) % w;
+      const i = yRow + x;
+
+      const u = U[i], v = V[i];
+      const lapu = U[yRow + xL] + U[yRow + xR] + U[yUp + x] + U[yDn + x] - 4 * u;
+      const lapv = V[yRow + xL] + V[yRow + xR] + V[yUp + x] + V[yDn + x] - 4 * v;
+      const uvv = u * v * v;
+
+      nextU[i] = Math.max(0, Math.min(1, u + dt * (Du * lapu - uvv + f * (1 - u))));
+      nextV[i] = Math.max(0, Math.min(1, v + dt * (Dv * lapv + uvv - (f + k) * v)));
+    }
+  }
+
+  const tmp1 = U; U = nextU; nextU = tmp1;
+  const tmp2 = V; V = nextV; nextV = tmp2;
+}
+
+// ─────────────────────────────────────────────
+// Rendering
+// ─────────────────────────────────────────────
+let imageData = null;
+
+function render() {
+  if (!imageData || imageData.width !== W || imageData.height !== H) {
+    imageData = ctx.createImageData(W, H);
+  }
+  const data = imageData.data;
+  const stops = colorSchemes[colorScheme];
+
+  let sumV = 0, maxV = 0;
+
+  for (let i = 0; i < W * H; i++) {
+    const v = V[i];
+    sumV += v;
+    if (v > maxV) maxV = v;
+
+    const t = Math.min(1, v * 2.5);
+    const [r, g, b] = lerpColor(stops, t);
+    const p = i * 4;
+    data[p]     = r;
+    data[p + 1] = g;
+    data[p + 2] = b;
+    data[p + 3] = 255;
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+
+  // Stats
+  document.getElementById('statMeanV').textContent = (sumV / (W * H)).toFixed(4);
+  document.getElementById('statMaxV').textContent = maxV.toFixed(4);
+  document.getElementById('statSteps').textContent = totalSteps > 9999
+    ? (totalSteps / 1000).toFixed(1) + 'k' : totalSteps;
+}
+
+// ─────────────────────────────────────────────
+// Animation Loop
+// ─────────────────────────────────────────────
+let lastTime = 0, fpsTimer = 0, frameCount = 0;
+
+function animate(timestamp) {
+  if (!running) return;
+
+  const dt = timestamp - lastTime;
+  lastTime = timestamp;
+  fpsTimer += dt;
+  frameCount++;
+  if (fpsTimer > 500) {
+    document.getElementById('statFps').textContent = Math.round(frameCount / fpsTimer * 1000);
+    fpsTimer = 0; frameCount = 0;
+  }
+
+  for (let s = 0; s < params.stepsPerFrame; s++) step();
+  totalSteps += params.stepsPerFrame;
+  render();
+
+  animFrameId = requestAnimationFrame(animate);
+}
+
+function togglePlay() {
+  running = !running;
+  const btn = document.getElementById('playBtn');
+  if (running) {
+    lastTime = performance.now();
+    btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+      <rect x="2" y="1" width="3" height="10"/><rect x="7" y="1" width="3" height="10"/>
+    </svg> 暂停`;
+    btn.style.background = '#388bfd';
+    animFrameId = requestAnimationFrame(animate);
+  } else {
+    if (animFrameId) cancelAnimationFrame(animFrameId);
+    btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+      <polygon points="2,1 11,6 2,11"/>
+    </svg> 运行`;
+    btn.style.background = '';
+  }
+}
+
+function stepOnce() {
+  for (let s = 0; s < params.stepsPerFrame; s++) step();
+  totalSteps += params.stepsPerFrame;
+  render();
+}
+
+// ─────────────────────────────────────────────
+// Presets
+// ─────────────────────────────────────────────
+const PRESETS = {
+  spots:     { Du: 0.210, Dv: 0.105, f: 0.035, k: 0.065 },
+  stripes:   { Du: 0.210, Dv: 0.105, f: 0.060, k: 0.062 },
+  labyrinth: { Du: 0.210, Dv: 0.105, f: 0.037, k: 0.060 },
+  mitosis:   { Du: 0.280, Dv: 0.140, f: 0.025, k: 0.056 },
+  worms:     { Du: 0.160, Dv: 0.080, f: 0.050, k: 0.065 },
+  coral:     { Du: 0.160, Dv: 0.080, f: 0.060, k: 0.063 },
+  bubbles:   { Du: 0.210, Dv: 0.105, f: 0.012, k: 0.050 },
+  chaos:     { Du: 0.190, Dv: 0.095, f: 0.026, k: 0.051 }
+};
+
+function applyPreset(name) {
+  const p = PRESETS[name];
+  if (!p) return;
+  Object.assign(params, p);
+
+  for (const [key, val] of Object.entries(p)) {
+    const slider = document.getElementById(`slider-${key}`);
+    if (slider) slider.value = val;
+    const display = document.getElementById(`val-${key}`);
+    if (display) display.textContent = val.toFixed(4);
+  }
+
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  const found = [...document.querySelectorAll('.preset-btn')].find(b => b.textContent.trim().length > 0 &&
+    b.getAttribute('onclick') === `applyPreset('${name}')`);
+  if (found) found.classList.add('active');
+
+  resetSim();
+}
+
+// ─────────────────────────────────────────────
+// Parameter Updates
+// ─────────────────────────────────────────────
+function updateParam(key, val) {
+  val = parseFloat(val);
+  params[key] = val;
+  const display = document.getElementById(`val-${key}`);
+  if (display) {
+    if (key === 'stepsPerFrame') display.textContent = Math.round(val);
+    else display.textContent = val.toFixed(4);
+  }
+}
+
+// ─────────────────────────────────────────────
+// Grid / Reset
+// ─────────────────────────────────────────────
+function changeGridSize(size) {
+  const wasRunning = running;
+  if (running) togglePlay();
+  W = H = parseInt(size);
+  setupCanvas();
+  initSim();
+  render();
+  if (wasRunning) togglePlay();
+}
+
+function resetSim() {
+  initSim();
+  render();
+}
+
+function clearCanvas() {
+  U.fill(1.0);
+  V.fill(0.0);
+  totalSteps = 0;
+  render();
+}
+
+function randomize() {
+  initSim('random');
+  render();
+}
+
+// ─────────────────────────────────────────────
+// Color Scheme
+// ─────────────────────────────────────────────
+function setColorScheme(name) {
+  colorScheme = name;
+  document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+  const sw = document.getElementById(`swatch-${name}`);
+  if (sw) sw.classList.add('active');
+  render();
+}
+
+// ─────────────────────────────────────────────
+// Tool & Mouse Interaction
+// ─────────────────────────────────────────────
+function setTool(name) {
+  currentTool = name;
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById(`tool-${name}`);
+  if (btn) btn.classList.add('active');
+}
+
+let painting = false;
+
+function getCanvasCoords(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = W / rect.width;
+  const scaleY = H / rect.height;
+  const x = Math.floor((e.clientX - rect.left) * scaleX);
+  const y = Math.floor((e.clientY - rect.top) * scaleY);
+  return [x, y];
+}
+
+function paint(x, y) {
+  const r = brushRadius;
+  for (let dy = -r; dy <= r; dy++) {
+    for (let dx = -r; dx <= r; dx++) {
+      if (dx * dx + dy * dy > r * r) continue;
+      const nx = ((x + dx) % W + W) % W;
+      const ny = ((y + dy) % H + H) % H;
+      const i = ny * W + nx;
+      const dist = Math.sqrt(dx * dx + dy * dy) / r;
+      const strength = Math.max(0, 1 - dist);
+
+      if (currentTool === 'draw') {
+        V[i] = Math.min(1, V[i] + strength * 0.4);
+        U[i] = Math.max(0, U[i] - strength * 0.4);
+      } else if (currentTool === 'erase') {
+        V[i] = Math.max(0, V[i] - strength * 0.5);
+        U[i] = Math.min(1, U[i] + strength * 0.5);
+      } else if (currentTool === 'seed') {
+        U[i] = 0.5 + (Math.random() - 0.5) * 0.2;
+        V[i] = 0.25 + Math.random() * 0.2;
+      }
+    }
+  }
+  if (!running) render();
+}
+
+canvas.addEventListener('mousedown', e => {
+  painting = true;
+  const [x, y] = getCanvasCoords(e);
+  paint(x, y);
+});
+
+canvas.addEventListener('mousemove', e => {
+  const [x, y] = getCanvasCoords(e);
+  document.getElementById('mousePos').textContent = `${x}, ${y}`;
+  if (x >= 0 && x < W && y >= 0 && y < H) {
+    const i = y * W + x;
+    document.getElementById('mouseU').textContent = U[i].toFixed(4);
+    document.getElementById('mouseV').textContent = V[i].toFixed(4);
+  }
+  if (painting) paint(x, y);
+});
+
+canvas.addEventListener('mouseup', () => { painting = false; });
+canvas.addEventListener('mouseleave', () => { painting = false; });
+
+// Touch support
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  painting = true;
+  const touch = e.touches[0];
+  const [x, y] = getCanvasCoords(touch);
+  paint(x, y);
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  const [x, y] = getCanvasCoords(touch);
+  paint(x, y);
+}, { passive: false });
+
+canvas.addEventListener('touchend', () => { painting = false; });
+
+// ─────────────────────────────────────────────
+// Grid Overlay
+// ─────────────────────────────────────────────
+function toggleGrid(show) {
+  showGridLines = show;
+  if (!show) render();
+}
+
+// ─────────────────────────────────────────────
+// Save Image
+// ─────────────────────────────────────────────
+function saveImage() {
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = W;
+  tempCanvas.height = H;
+  const tempCtx = tempCanvas.getContext('2d');
+  tempCtx.putImageData(imageData, 0, 0);
+  const link = document.createElement('a');
+  link.download = `turing-pattern-f${params.f.toFixed(4)}-k${params.k.toFixed(4)}.png`;
+  link.href = tempCanvas.toDataURL('image/png');
+  link.click();
+}
+
+// ─────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────
+function init() {
+  setupCanvas();
+  drawSwatches();
+  initSim('random');
+  render();
+  // Auto-start
+  togglePlay();
+}
+
+init();
+</script>
+</body>
+</html>
