@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>图灵斑图模拟器</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%230d1117'/><circle cx='30' cy='30' r='12' fill='%2358a6ff' opacity='.9'/><circle cx='68' cy='28' r='9' fill='%2358a6ff' opacity='.7'/><circle cx='22' cy='62' r='8' fill='%2358a6ff' opacity='.6'/><circle cx='58' cy='65' r='13' fill='%2358a6ff' opacity='.9'/><circle cx='80' cy='55' r='7' fill='%2358a6ff' opacity='.5'/><circle cx='42' cy='82' r='9' fill='%2358a6ff' opacity='.7'/></svg>">
   <style>
     :root {
       --bg: #0d1117;
@@ -361,7 +362,7 @@
     .tooltip:hover::after {
       content: attr(data-tip);
       position: absolute;
-      bottom: calc(100% + 6px);
+      top: calc(100% + 6px);
       left: 50%;
       transform: translateX(-50%);
       background: #1c2128;
@@ -401,6 +402,30 @@
     }
 
     select:focus { outline: none; border-color: var(--accent); }
+
+    .info-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1px solid var(--text-muted);
+      color: var(--text-muted);
+      font-size: 9px;
+      font-style: italic;
+      font-family: Georgia, serif;
+      margin-left: 4px;
+      cursor: default;
+      line-height: 1;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+
+    .info-icon:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
 
     .tag {
       display: inline-block;
@@ -620,9 +645,9 @@
     <div class="canvas-toolbar">
       <div class="tool-group">
         <span style="color:var(--text-muted);font-size:12px;line-height:28px">绘制工具:</span>
-        <button class="tool-btn active" id="tool-draw" onclick="setTool('draw')">绘制 v</button>
+        <button class="tool-btn active" id="tool-draw" onclick="setTool('draw')">绘制</button>
         <button class="tool-btn" id="tool-erase" onclick="setTool('erase')">清除</button>
-        <button class="tool-btn" id="tool-seed" onclick="setTool('seed')">播种</button>
+        <button class="tool-btn" id="tool-seed" onclick="setTool('seed')">播种<span class="info-icon tooltip" data-tip="在画布上注入随机浓度扰动，作为斑图生长的初始种子" onclick="event.stopPropagation()">i</span></button>
       </div>
       <div class="tool-group" style="margin-left:8px">
         <span style="color:var(--text-muted);font-size:12px;line-height:28px">笔刷:</span>
@@ -968,7 +993,7 @@ const PRESETS = {
   spots:     { Du: 0.210, Dv: 0.105, f: 0.035, k: 0.065 },
   stripes:   { Du: 0.210, Dv: 0.105, f: 0.060, k: 0.062 },
   labyrinth: { Du: 0.210, Dv: 0.105, f: 0.037, k: 0.060 },
-  mitosis:   { Du: 0.280, Dv: 0.140, f: 0.025, k: 0.056 },
+  mitosis:   { Du: 0.210, Dv: 0.105, f: 0.054, k: 0.062 },
   worms:     { Du: 0.160, Dv: 0.080, f: 0.050, k: 0.065 },
   coral:     { Du: 0.160, Dv: 0.080, f: 0.060, k: 0.063 },
   bubbles:   { Du: 0.210, Dv: 0.105, f: 0.012, k: 0.050 },
@@ -1021,12 +1046,18 @@ function changeGridSize(size) {
   if (wasRunning) togglePlay();
 }
 
+function pause() {
+  if (running) togglePlay();
+}
+
 function resetSim() {
+  pause();
   initSim();
   render();
 }
 
 function clearCanvas() {
+  pause();
   U.fill(1.0);
   V.fill(0.0);
   totalSteps = 0;
@@ -1034,6 +1065,7 @@ function clearCanvas() {
 }
 
 function randomize() {
+  pause();
   initSim('random');
   render();
 }
