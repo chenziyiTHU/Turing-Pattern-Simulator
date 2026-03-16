@@ -463,7 +463,7 @@
         <button class="preset-btn" onclick="applyPreset('spots')">斑点</button>
         <button class="preset-btn" onclick="applyPreset('stripes')">条纹</button>
         <button class="preset-btn" onclick="applyPreset('labyrinth')">迷宫</button>
-        <button class="preset-btn" onclick="applyPreset('mitosis')">细胞分裂</button>
+        <button class="preset-btn" onclick="applyPreset('polygon')">多边形</button>
         <button class="preset-btn" onclick="applyPreset('worms')">虫纹</button>
         <button class="preset-btn" onclick="applyPreset('coral')">珊瑚</button>
         <button class="preset-btn" onclick="applyPreset('bubbles')">气泡</button>
@@ -548,7 +548,7 @@
         <div class="param-label">
           <span class="param-name">初始化模式</span>
         </div>
-        <select id="initMode" style="width:100%;margin-top:4px">
+        <select id="initMode" onchange="resetSim()" style="width:100%;margin-top:4px">
           <option value="random">随机噪声</option>
           <option value="center">中心方块</option>
           <option value="grid">点阵</option>
@@ -655,11 +655,6 @@
                oninput="brushRadius = parseInt(this.value); document.getElementById('brushSizeVal').textContent = this.value">
         <span id="brushSizeVal" style="color:var(--accent);font-size:12px;min-width:20px;line-height:28px">10</span>
       </div>
-      <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
-        <label style="color:var(--text-muted);font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer">
-          <input type="checkbox" id="showGrid" onchange="toggleGrid(this.checked)"> 显示边界
-        </label>
-      </div>
     </div>
 
     <div class="canvas-container">
@@ -688,7 +683,6 @@ let totalSteps = 0;
 let currentTool = 'draw';
 let brushRadius = 10;
 let colorScheme = 'classic';
-let showGridLines = false;
 
 // ─────────────────────────────────────────────
 // Canvas Setup
@@ -991,9 +985,9 @@ function stepOnce() {
 // ─────────────────────────────────────────────
 const PRESETS = {
   spots:     { Du: 0.210, Dv: 0.105, f: 0.035, k: 0.065 },
-  stripes:   { Du: 0.210, Dv: 0.105, f: 0.060, k: 0.062 },
+  stripes:   { Du: 0.210, Dv: 0.105, f: 0.044, k: 0.061 },
   labyrinth: { Du: 0.210, Dv: 0.105, f: 0.037, k: 0.060 },
-  mitosis:   { Du: 0.210, Dv: 0.105, f: 0.054, k: 0.062 },
+  polygon:   { Du: 0.160, Dv: 0.080, f: 0.098, k: 0.0555 },
   worms:     { Du: 0.160, Dv: 0.080, f: 0.050, k: 0.065 },
   coral:     { Du: 0.160, Dv: 0.080, f: 0.060, k: 0.063 },
   bubbles:   { Du: 0.210, Dv: 0.105, f: 0.012, k: 0.050 },
@@ -1037,13 +1031,9 @@ function updateParam(key, val) {
 // Grid / Reset
 // ─────────────────────────────────────────────
 function changeGridSize(size) {
-  const wasRunning = running;
-  if (running) togglePlay();
   W = H = parseInt(size);
   setupCanvas();
-  initSim();
-  render();
-  if (wasRunning) togglePlay();
+  resetSim();
 }
 
 function pause() {
@@ -1167,14 +1157,6 @@ canvas.addEventListener('touchmove', e => {
 canvas.addEventListener('touchend', () => { painting = false; });
 
 // ─────────────────────────────────────────────
-// Grid Overlay
-// ─────────────────────────────────────────────
-function toggleGrid(show) {
-  showGridLines = show;
-  if (!show) render();
-}
-
-// ─────────────────────────────────────────────
 // Save Image
 // ─────────────────────────────────────────────
 function saveImage() {
@@ -1197,8 +1179,6 @@ function init() {
   drawSwatches();
   initSim('random');
   render();
-  // Auto-start
-  togglePlay();
 }
 
 init();
